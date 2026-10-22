@@ -471,6 +471,10 @@ local V = {
     CarpetSpeed = false,
     CarpetSpeedValue = 140,
     CarpetSpeedKey = "Q",
+    WalkSpeed = false,
+    WalkSpeedValue = 28,
+    StealSpeed = false,
+    StealSpeedValue = 22,
     InfJump = true,
     AutoKickOnSteal = false,
     FOV = 80,
@@ -638,10 +642,163 @@ end
 if _needMigrationSave then
     U()
 end
+
+-- ===== JHAYDEE unified theme core (all windows follow the selected theme) =====
+do
+    local THEME_PALETTES = {
+        ["JHAYDEE Red"] = {
+            BG=Color3.fromRGB(7,7,10), SURF=Color3.fromRGB(13,13,17), SURF2=Color3.fromRGB(24,24,30),
+            TEXT=Color3.fromRGB(248,248,252), DIM=Color3.fromRGB(165,165,177), AQUA=Color3.fromRGB(205,24,42),
+            AQUA2=Color3.fromRGB(130,12,24), AQUA_STROKE=Color3.fromRGB(255,55,72), GREEN1=Color3.fromRGB(100,12,24),
+            GREEN2=Color3.fromRGB(205,24,42), GREEN_STROKE=Color3.fromRGB(255,55,72), OFF_BG=Color3.fromRGB(31,31,39), OFF_TEXT=Color3.fromRGB(165,165,177),
+        },
+        ["Halloween Spooky"] = {
+            BG=Color3.fromRGB(13,7,20), SURF=Color3.fromRGB(25,12,35), SURF2=Color3.fromRGB(45,20,55),
+            TEXT=Color3.fromRGB(255,245,225), DIM=Color3.fromRGB(190,145,180), AQUA=Color3.fromRGB(255,120,20),
+            AQUA2=Color3.fromRGB(180,70,10), AQUA_STROKE=Color3.fromRGB(255,155,40), GREEN1=Color3.fromRGB(95,35,120),
+            GREEN2=Color3.fromRGB(145,55,180), GREEN_STROKE=Color3.fromRGB(205,125,255), OFF_BG=Color3.fromRGB(38,20,48), OFF_TEXT=Color3.fromRGB(190,145,180),
+        },
+        ["Christmas"] = {
+            BG=Color3.fromRGB(8,20,17), SURF=Color3.fromRGB(12,35,27), SURF2=Color3.fromRGB(25,55,42),
+            TEXT=Color3.fromRGB(255,248,235), DIM=Color3.fromRGB(190,205,190), AQUA=Color3.fromRGB(210,35,50),
+            AQUA2=Color3.fromRGB(135,18,30), AQUA_STROKE=Color3.fromRGB(255,75,85), GREEN1=Color3.fromRGB(20,105,62),
+            GREEN2=Color3.fromRGB(30,145,80), GREEN_STROKE=Color3.fromRGB(100,230,145), OFF_BG=Color3.fromRGB(30,48,40), OFF_TEXT=Color3.fromRGB(180,200,185),
+        },
+        ["Sea"] = {
+            BG=Color3.fromRGB(5,18,30), SURF=Color3.fromRGB(8,30,48), SURF2=Color3.fromRGB(15,50,70),
+            TEXT=Color3.fromRGB(235,250,255), DIM=Color3.fromRGB(140,185,205), AQUA=Color3.fromRGB(30,175,220),
+            AQUA2=Color3.fromRGB(15,105,155), AQUA_STROKE=Color3.fromRGB(80,220,255), GREEN1=Color3.fromRGB(10,95,125),
+            GREEN2=Color3.fromRGB(20,145,175), GREEN_STROKE=Color3.fromRGB(80,220,255), OFF_BG=Color3.fromRGB(18,42,58), OFF_TEXT=Color3.fromRGB(140,185,205),
+        },
+    }
+    local ROLES = { "BG", "SURF", "SURF2", "TEXT", "DIM", "AQUA", "AQUA2", "AQUA_STROKE", "GREEN1", "GREEN2",
+        "GREEN_STROKE", "OFF_BG", "OFF_TEXT", "HOVER", "LIGHT", "DEEP", "BG2" }
+    local function ck(c)
+        return math.floor(c.R * 255 + 0.5) * 65536 + math.floor(c.G * 255 + 0.5) * 256 + math.floor(c.B * 255 + 0.5)
+    end
+    local function nudge(c)
+        local r, g, b = math.floor(c.R * 255 + 0.5), math.floor(c.G * 255 + 0.5), math.floor(c.B * 255 + 0.5)
+        b = (b < 255) and (b + 1) or (b - 1)
+        return Color3.fromRGB(r, g, b)
+    end
+    for _, pal in pairs(THEME_PALETTES) do
+        pal.HOVER = pal.SURF2:Lerp(pal.AQUA2, 0.32)
+        pal.LIGHT = pal.AQUA_STROKE:Lerp(pal.TEXT, 0.28)
+        pal.DEEP = pal.BG:Lerp(Color3.new(0, 0, 0), 0.45)
+        pal.BG2 = pal.BG:Lerp(pal.SURF, 0.5)
+        -- make every role a unique color so a theme swap can never mix roles up
+        local seen = {}
+        for _, role in ipairs(ROLES) do
+            local c = pal[role]
+            while seen[ck(c)] do c = nudge(c) end
+            seen[ck(c)] = true
+            pal[role] = c
+        end
+    end
+    _G.JHThemePalettes = THEME_PALETTES
+    _G.JHTheme = {}
+    do
+        local pal = THEME_PALETTES[i.ThemeName] or THEME_PALETTES["JHAYDEE Red"]
+        for k, v in pairs(pal) do _G.JHTheme[k] = v end
+    end
+    _G.JHC = function(role)
+        return _G.JHTheme[role]
+    end
+    _G.JHDyn = function(map)
+        return setmetatable({}, {
+            __index = function(_, k)
+                local v = map[k]
+                if type(v) == "string" then return _G.JHTheme[v] end
+                return v
+            end,
+        })
+    end
+
+    local NAMES = {
+        ["lMWjwEoSnCPj"] = true, ["cJPcVLFpwxgI"] = true, ["bRXgmsaEVfze"] = true, ["SxTopLayer"] = true,
+        ["JHAYDEE HUB"] = true, ["PriorityEditor"] = true, ["JH_HZ_ToggleGui"] = true,
+        ["JHAYDEE_APPanelGui"] = true, ["JH_HZ_JobIdGui"] = true, ["AdminSpammerUI"] = true,
+    }
+    _G.JHRecolorAll = function(old, new)
+        local map, any = {}, false
+        for role, oc in pairs(old) do
+            local nc = new[role]
+            if typeof(oc) == "Color3" and typeof(nc) == "Color3" and ck(oc) ~= ck(nc) then
+                map[ck(oc)] = nc
+                any = true
+            end
+        end
+        if not any then return end
+        local function conv(c) return map[ck(c)] end
+        local roots = {}
+        local function scan(host)
+            if not host then return end
+            for _, g in ipairs(host:GetChildren()) do
+                if g:IsA("ScreenGui") and NAMES[g.Name] then roots[#roots + 1] = g end
+            end
+        end
+        pcall(function() scan(gethui and gethui() or nil) end)
+        pcall(function() scan(game:GetService("CoreGui")) end)
+        pcall(function()
+            local lp = game:GetService("Players").LocalPlayer
+            scan(lp and lp:FindFirstChild("PlayerGui"))
+        end)
+        for _, root in ipairs(roots) do
+            for _, o in ipairs(root:GetDescendants()) do
+                pcall(function()
+                    if o:IsA("GuiObject") then
+                        local nc = conv(o.BackgroundColor3)
+                        if nc then o.BackgroundColor3 = nc end
+                        nc = conv(o.BorderColor3)
+                        if nc then o.BorderColor3 = nc end
+                        if o:IsA("TextLabel") or o:IsA("TextButton") or o:IsA("TextBox") then
+                            nc = conv(o.TextColor3)
+                            if nc then o.TextColor3 = nc end
+                            nc = conv(o.TextStrokeColor3)
+                            if nc then o.TextStrokeColor3 = nc end
+                            if o:IsA("TextBox") then
+                                nc = conv(o.PlaceholderColor3)
+                                if nc then o.PlaceholderColor3 = nc end
+                            end
+                        elseif o:IsA("ImageLabel") or o:IsA("ImageButton") then
+                            nc = conv(o.ImageColor3)
+                            if nc then o.ImageColor3 = nc end
+                        end
+                        if o:IsA("ScrollingFrame") then
+                            nc = conv(o.ScrollBarImageColor3)
+                            if nc then o.ScrollBarImageColor3 = nc end
+                        end
+                    elseif o:IsA("UIStroke") then
+                        local nc = conv(o.Color)
+                        if nc then o.Color = nc end
+                    elseif o:IsA("UIGradient") then
+                        local out, changed = {}, false
+                        for idx, kp in ipairs(o.Color.Keypoints) do
+                            local nc = conv(kp.Value)
+                            if nc then
+                                changed = true
+                                out[idx] = ColorSequenceKeypoint.new(kp.Time, nc)
+                            else
+                                out[idx] = kp
+                            end
+                        end
+                        if changed then o.Color = ColorSequence.new(out) end
+                    end
+                end)
+            end
+        end
+    end
+end
 do
     _G.StickyCarpetSpeed = i.CarpetSpeed == true
     _G.StickyCarpetSpeedValue = math.clamp(tonumber(i.CarpetSpeedValue) or 140, 20, 400)
     _G.StickyCarpetSpeedKeyName = type(i.CarpetSpeedKey) == "string" and i.CarpetSpeedKey or "Q"
+    _G.StickyWalkSpeed = i.WalkSpeed == true
+    _G.StickyWalkSpeedValue = math.clamp(tonumber(i.WalkSpeedValue) or 28, 16, 32)
+    _G.StickyStealSpeed = i.StealSpeed == true
+    _G.StickyStealSpeedValue = math.clamp(tonumber(i.StealSpeedValue) or 22, 15, 32)
+    _G.StickyAdminSpam1 = type(i.AdminSpam1) == "table" and i.AdminSpam1 or { "balloon", "tiny", "inverse", "rocket" }
+    _G.StickyAdminSpam2 = type(i.AdminSpam2) == "table" and i.AdminSpam2 or { "ragdoll", "jail", "jumpscare", "morph" }
     _G.StickyInfJump = i.InfJump ~= false
     _G.StickyAutoKickOnSteal = i.AutoKickOnSteal == true
     _G.StickyFOV = tonumber(i.FOV) or 80
@@ -663,6 +820,12 @@ do
         if _G.StickyInfJump ~= nil then i.InfJump = _G.StickyInfJump == true end
         if _G.StickyCarpetSpeed ~= nil then i.CarpetSpeed = _G.StickyCarpetSpeed == true end
         if _G.StickyAutoKickOnSteal ~= nil then i.AutoKickOnSteal = _G.StickyAutoKickOnSteal == true end
+        i.WalkSpeedValue = math.clamp(tonumber(_G.StickyWalkSpeedValue) or 28, 16, 32)
+        i.StealSpeedValue = math.clamp(tonumber(_G.StickyStealSpeedValue) or 22, 15, 32)
+        if _G.StickyWalkSpeed ~= nil then i.WalkSpeed = _G.StickyWalkSpeed == true end
+        if _G.StickyStealSpeed ~= nil then i.StealSpeed = _G.StickyStealSpeed == true end
+        if type(_G.StickyAdminSpam1) == "table" then i.AdminSpam1 = _G.StickyAdminSpam1 end
+        if type(_G.StickyAdminSpam2) == "table" then i.AdminSpam2 = _G.StickyAdminSpam2 end
     end
 
     local lastSnapshot = nil
@@ -992,6 +1155,75 @@ do
             if i.CarpetSpeed == true then
                 pcall(_G.StickySetCarpetSpeed, true)
             end
+        end)
+    end)()
+
+    -- Walk Speed + Steal Speed (ported from Aurora Hub)
+    ;(function()
+        local RS = game:GetService("RunService")
+        local STEAL_MIN, STEAL_MAX = 15, 32
+        local CYCLE_EVERY, CYCLE_GAP = 2, 0.15
+        local stealPaused = false
+        local cycleToken = 0
+
+        local function walkVal()
+            return math.clamp(tonumber(_G.StickyWalkSpeedValue) or 28, 16, 32)
+        end
+        local function stealVal()
+            return math.clamp(tonumber(_G.StickyStealSpeedValue) or 22, STEAL_MIN, STEAL_MAX)
+        end
+        local function isStealing()
+            local st = C:GetAttribute("Stealing")
+            return st ~= nil and st ~= false
+        end
+
+        -- while stealing, the boost pauses for a split second every couple of seconds
+        local function onStealingChanged()
+            cycleToken = cycleToken + 1
+            stealPaused = false
+            if not isStealing() then return end
+            local mine = cycleToken
+            task.spawn(function()
+                while true do
+                    task.wait(CYCLE_EVERY)
+                    if mine ~= cycleToken or not isStealing() then return end
+                    stealPaused = true
+                    task.wait(CYCLE_GAP)
+                    stealPaused = false
+                end
+            end)
+        end
+        C:GetAttributeChangedSignal("Stealing"):Connect(onStealingChanged)
+        task.defer(onStealingChanged)
+
+        RS.Heartbeat:Connect(function(dt)
+            if not (_G.StickyWalkSpeed or _G.StickyStealSpeed) then return end
+            local ch = C.Character
+            local hum = ch and ch:FindFirstChildOfClass("Humanoid")
+            local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
+            if not hum or not hrp or hum.Health <= 0 then return end
+            local md = hum.MoveDirection
+            if md.Magnitude <= 0 then return end
+
+            if isStealing() then
+                -- STEAL SPEED: small CFrame nudge while carrying a brainrot
+                if not _G.StickyStealSpeed or stealPaused then return end
+                if hum.FloorMaterial == Enum.Material.Air then return end
+                local extra = math.max(stealVal() - hum.WalkSpeed, 0)
+                if extra > 0 then
+                    hrp.CFrame = hrp.CFrame + (md * extra * dt)
+                end
+                return
+            end
+
+            -- WALK SPEED: velocity override (yields to Carpet Speed / carpet tool)
+            if not _G.StickyWalkSpeed or _G.StickyCarpetSpeedActive then return end
+            local tool = ch:FindFirstChildOfClass("Tool")
+            if tool and tool.Name:lower():find("carpet", 1, true) then return end
+            local v = hrp.AssemblyLinearVelocity
+            local dir = md.Unit
+            local spd = walkVal()
+            hrp.AssemblyLinearVelocity = Vector3.new(dir.X * spd, v.Y, dir.Z * spd)
         end)
     end)()
 
@@ -3548,17 +3780,17 @@ local function c()
         C:Kick("")
     end)
 end
-local W = {
-    Background = Color3.fromRGB(10, 6, 16),
-    Surface = Color3.fromRGB(18, 10, 28),
-    SurfaceHighlight = Color3.fromRGB(36, 18, 48),
-    Accent1 = Color3.fromRGB(255, 120, 20),
-    Accent2 = Color3.fromRGB(140, 50, 180),
-    TextPrimary = Color3.fromRGB(255, 245, 220),
-    TextSecondary = Color3.fromRGB(180, 140, 100),
+local W = _G.JHDyn({
+    Background = "BG",
+    Surface = "SURF",
+    SurfaceHighlight = "SURF2",
+    Accent1 = "AQUA",
+    Accent2 = "GREEN2",
+    TextPrimary = "TEXT",
+    TextSecondary = "DIM",
     Success = Color3.fromRGB(50, 200, 80),
     Error = Color3.fromRGB(255, 80, 40),
-}
+})
 local function F(E, m)
     local A = x:FindFirstChild("lMWjwEoSnCPj")
     if A then
@@ -3570,7 +3802,7 @@ local function F(E, m)
     local H = Instance.new("Frame", A)
     H.Size = UDim2.new(0, 290, 0, 54)
     H.Position = UDim2.new(0.5, -145.0, 0, 80)
-    H.BackgroundColor3 = Color3.fromRGB(6, 6, 12)
+    H.BackgroundColor3 = _G.JHC("DEEP")
     H.BackgroundTransparency = 1
     H.BorderSizePixel = 0
     Instance.new("UICorner", H).CornerRadius = UDim.new(0, 9)
@@ -4134,16 +4366,10 @@ task.spawn(function()
     WG.Parent = lG
     local XG = Instance.new("Frame")
     local tG = d and 0.6 or 1
-    local GG = {
-        BG = Color3.fromRGB(10, 6, 16),
-        SURF = Color3.fromRGB(18, 10, 28),
-        SURF2 = Color3.fromRGB(36, 18, 48),
-        TEXT = Color3.fromRGB(255, 245, 220),
-        DIM = Color3.fromRGB(180, 120, 60),
-        AQUA = Color3.fromRGB(255, 120, 20),
-        AQUA2 = Color3.fromRGB(180, 70, 10),
-        AQUA_STROKE = Color3.fromRGB(255, 140, 40),
-    }
+    local GG = _G.JHDyn({
+        BG = "BG", SURF = "SURF", SURF2 = "SURF2", TEXT = "TEXT", DIM = "DIM",
+        AQUA = "AQUA", AQUA2 = "AQUA2", AQUA_STROKE = "AQUA_STROKE",
+    })
     do
         local ps = i.PanelSize and i.PanelSize.AutoSteal
         local w = tonumber(ps and ps.W) or UI_PANEL_W
@@ -4184,7 +4410,7 @@ task.spawn(function()
     vG.Size = UDim2.new(1, -32.0, 0, 35)
     vG.Position = UDim2.new(0, 16, 0, 12)
     vG.BackgroundTransparency = 1
-    vG.Text = "JHAYDEE PUB METHOD"
+    vG.Text = "JHAYDEE HUB"
     vG.Font = Enum.Font.GothamBlack
     vG.TextSize = 28
     vG.TextColor3 = GG.TEXT
@@ -4234,17 +4460,10 @@ task.spawn(function()
     MG.DisplayOrder = 2147483646
     MG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     MG.Parent = lG
-    local wG = {
-        PANEL = Color3.fromRGB(14, 8, 22),
-        PANEL2 = Color3.fromRGB(32, 16, 42),
-        TEXT = Color3.fromRGB(255, 245, 220),
-        STROKE = Color3.fromRGB(255, 140, 40),
-        GLOW = Color3.fromRGB(255, 100, 0),
-        TRACK = Color3.fromRGB(28, 14, 36),
-        TRACK2 = Color3.fromRGB(42, 20, 52),
-        FILL1 = Color3.fromRGB(255, 100, 0),
-        FILL2 = Color3.fromRGB(255, 180, 40),
-    }
+    local wG = _G.JHDyn({
+        PANEL = "BG", PANEL2 = "SURF2", TEXT = "TEXT", STROKE = "AQUA_STROKE", GLOW = "AQUA",
+        TRACK = "SURF", TRACK2 = "SURF2", FILL1 = "AQUA", FILL2 = "LIGHT",
+    })
     local bG = Instance.new("Frame", MG)
     bG.Name = "CurrentTargetHUD"
     bG.AnchorPoint = Vector2.new(0.5, 1)
@@ -4312,7 +4531,7 @@ task.spawn(function()
     FG.Color =
         ColorSequence.new({ ColorSequenceKeypoint.new(0, wG.FILL1), ColorSequenceKeypoint.new(1, wG.FILL2) })
     local FG = Instance.new("UIStroke", bG)
-    FG.Color = Color3.fromRGB(255, 160, 40)
+    FG.Color = _G.JHC("LIGHT")
     FG.Thickness = 1
     FG.Transparency = 0.45
     local FG = Instance.new("TextLabel", DG)
@@ -4346,14 +4565,14 @@ task.spawn(function()
         stickyBar.AutomaticSize = Enum.AutomaticSize.X
         stickyBar.Size = UDim2.new(0, 0, 0, 55 * tG)
         stickyBar.Position = UDim2.new(0.5, 0, 1, _G.YesIsPhone and -68 or -70)
-        stickyBar.BackgroundColor3 = Color3.fromRGB(8, 4, 14)
+        stickyBar.BackgroundColor3 = _G.JHC("DEEP")
         stickyBar.BackgroundTransparency = 0.02
         stickyBar.BorderSizePixel = 0
         stickyBar.ClipsDescendants = false
         stickyBar.ZIndex = 70
         Instance.new("UICorner", stickyBar).CornerRadius = UDim.new(0, math.floor(8 * tG))
         local sStroke = Instance.new("UIStroke", stickyBar)
-        sStroke.Color = Color3.fromRGB(255, 140, 40)
+        sStroke.Color = _G.JHC("AQUA_STROKE")
         sStroke.Thickness = 1
         sStroke.Transparency = 0.35
         local sPad = Instance.new("UIPadding", stickyBar)
@@ -4368,7 +4587,7 @@ task.spawn(function()
         local dot = Instance.new("Frame", stickyBar)
         dot.LayoutOrder = 1
         dot.Size = UDim2.fromOffset(math.floor(14 * tG), math.floor(14 * tG))
-        dot.BackgroundColor3 = Color3.fromRGB(255, 120, 20)
+        dot.BackgroundColor3 = _G.JHC("AQUA")
         dot.BorderSizePixel = 0
         dot.ZIndex = 72
         Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
@@ -4379,34 +4598,51 @@ task.spawn(function()
         stickyLabel.BackgroundTransparency = 1
         stickyLabel.Font = Enum.Font.GothamBlack
         stickyLabel.TextSize = math.floor(16 * tG)
-        stickyLabel.TextColor3 = Color3.fromRGB(255, 235, 235)
+        stickyLabel.TextColor3 = _G.JHC("TEXT")
         stickyLabel.TextXAlignment = Enum.TextXAlignment.Left
         stickyLabel.TextTruncate = Enum.TextTruncate.None
         stickyLabel.TextWrapped = false
         stickyLabel.ClipsDescendants = false
         stickyLabel.ZIndex = 72
-        stickyLabel.Text = "JHAYDEE PUB METHOD"
+        stickyLabel.Text = "JHAYDEE HUB"
         local sep = Instance.new("Frame", stickyBar)
         sep.LayoutOrder = 3
         sep.Size = UDim2.new(0, 1, 0.6, 0)
-        sep.BackgroundColor3 = Color3.fromRGB(255, 140, 40)
+        sep.BackgroundColor3 = _G.JHC("AQUA_STROKE")
         sep.BackgroundTransparency = 0.4
         sep.BorderSizePixel = 0
         sep.ZIndex = 72
-        local discordLabel = Instance.new("TextLabel", stickyBar)
+        local discordLabel = Instance.new("TextButton", stickyBar)
+        discordLabel.AutoButtonColor = false
         discordLabel.LayoutOrder = 4
         discordLabel.AutomaticSize = Enum.AutomaticSize.X
         discordLabel.Size = UDim2.new(0, 0, 1, 0)
         discordLabel.BackgroundTransparency = 1
         discordLabel.Font = Enum.Font.GothamBold
         discordLabel.TextSize = math.floor(16 * tG)
-        discordLabel.TextColor3 = Color3.fromRGB(255, 160, 60)
+        discordLabel.TextColor3 = _G.JHC("LIGHT")
         discordLabel.TextXAlignment = Enum.TextXAlignment.Right
         discordLabel.TextTruncate = Enum.TextTruncate.None
         discordLabel.TextWrapped = false
         discordLabel.ClipsDescendants = false
         discordLabel.ZIndex = 72
-        discordLabel.Text = "HALLOWEEN EDITION"
+        local DISCORD_LINK = "https://discord.gg/UCbGwbx5wX"
+        local DISCORD_SHOWN = "discord.gg/UCbGwbx5wX"
+        discordLabel.Text = DISCORD_SHOWN
+        discordLabel.MouseButton1Click:Connect(function()
+            local ok = false
+            if type(setclipboard) == "function" then
+                ok = pcall(setclipboard, DISCORD_LINK)
+            elseif type(toclipboard) == "function" then
+                ok = pcall(toclipboard, DISCORD_LINK)
+            end
+            discordLabel.Text = ok and "COPIED!" or "COPY NOT SUPPORTED"
+            task.delay(1.5, function()
+                if discordLabel and discordLabel.Parent then
+                    discordLabel.Text = DISCORD_SHOWN
+                end
+            end)
+        end)
     end
     local DG = x:FindFirstChild("kzBUJxAKwhtf")
     if DG then
@@ -4440,39 +4676,14 @@ task.spawn(function()
         i.Positions.TargetControls = { X = tG, Y = DG }
     end
     lG.Position = UDim2.new(tG or 0.26, EG or 10, DG or 0.35, mG or 0)
-    lG.BackgroundColor3 = Color3.fromRGB(10, 6, 16)
+    lG.BackgroundColor3 = _G.JHC("BG")
     lG.BackgroundTransparency = 0
     lG.BorderSizePixel = 0
     lG.ClipsDescendants = false
     lG.ZIndex = 100
     w(lG)
-    local THEME_PALETTES = {
-        ["JHAYDEE Red"] = {
-            BG=Color3.fromRGB(7,7,10), SURF=Color3.fromRGB(13,13,17), SURF2=Color3.fromRGB(24,24,30),
-            TEXT=Color3.fromRGB(248,248,252), DIM=Color3.fromRGB(165,165,177), AQUA=Color3.fromRGB(205,24,42),
-            AQUA2=Color3.fromRGB(130,12,24), AQUA_STROKE=Color3.fromRGB(255,55,72), GREEN1=Color3.fromRGB(100,12,24),
-            GREEN2=Color3.fromRGB(205,24,42), GREEN_STROKE=Color3.fromRGB(255,55,72), OFF_BG=Color3.fromRGB(31,31,39), OFF_TEXT=Color3.fromRGB(165,165,177),
-        },
-        ["Halloween Spooky"] = {
-            BG=Color3.fromRGB(13,7,20), SURF=Color3.fromRGB(25,12,35), SURF2=Color3.fromRGB(45,20,55),
-            TEXT=Color3.fromRGB(255,245,225), DIM=Color3.fromRGB(190,145,180), AQUA=Color3.fromRGB(255,120,20),
-            AQUA2=Color3.fromRGB(180,70,10), AQUA_STROKE=Color3.fromRGB(255,155,40), GREEN1=Color3.fromRGB(95,35,120),
-            GREEN2=Color3.fromRGB(145,55,180), GREEN_STROKE=Color3.fromRGB(205,125,255), OFF_BG=Color3.fromRGB(38,20,48), OFF_TEXT=Color3.fromRGB(190,145,180),
-        },
-        ["Christmas"] = {
-            BG=Color3.fromRGB(8,20,17), SURF=Color3.fromRGB(12,35,27), SURF2=Color3.fromRGB(25,55,42),
-            TEXT=Color3.fromRGB(255,248,235), DIM=Color3.fromRGB(190,205,190), AQUA=Color3.fromRGB(210,35,50),
-            AQUA2=Color3.fromRGB(135,18,30), AQUA_STROKE=Color3.fromRGB(255,75,85), GREEN1=Color3.fromRGB(20,105,62),
-            GREEN2=Color3.fromRGB(30,145,80), GREEN_STROKE=Color3.fromRGB(100,230,145), OFF_BG=Color3.fromRGB(30,48,40), OFF_TEXT=Color3.fromRGB(180,200,185),
-        },
-        ["Sea"] = {
-            BG=Color3.fromRGB(5,18,30), SURF=Color3.fromRGB(8,30,48), SURF2=Color3.fromRGB(15,50,70),
-            TEXT=Color3.fromRGB(235,250,255), DIM=Color3.fromRGB(140,185,205), AQUA=Color3.fromRGB(30,175,220),
-            AQUA2=Color3.fromRGB(15,105,155), AQUA_STROKE=Color3.fromRGB(80,220,255), GREEN1=Color3.fromRGB(10,95,125),
-            GREEN2=Color3.fromRGB(20,145,175), GREEN_STROKE=Color3.fromRGB(80,220,255), OFF_BG=Color3.fromRGB(18,42,58), OFF_TEXT=Color3.fromRGB(140,185,205),
-        },
-    }
-    local b = {}
+    local THEME_PALETTES = _G.JHThemePalettes
+    local b = _G.JHTheme
     local function loadThemePalette(name)
         local palette = THEME_PALETTES[name] or THEME_PALETTES["JHAYDEE Red"]
         for key, value in pairs(palette) do b[key] = value end
@@ -4643,7 +4854,7 @@ task.spawn(function()
         sG.TextColor3 = b.OFF_TEXT
         sG.ZIndex = 105
         gG.MouseEnter:Connect(function()
-            EG(gG, 0.14, { BackgroundColor3 = Color3.fromRGB(48, 24, 64) })
+            EG(gG, 0.14, { BackgroundColor3 = _G.JHC("HOVER") })
             EG(ZG, 0.14, { Transparency = 0.38 })
         end)
         gG.MouseLeave:Connect(function()
@@ -4691,7 +4902,7 @@ task.spawn(function()
     tG(priorityButton, 6)
     local priorityBtnStroke = DG(priorityButton, b.AQUA_STROKE, 1, 0.55)
     priorityListRow.MouseEnter:Connect(function()
-        EG(priorityListRow, 0.14, { BackgroundColor3 = Color3.fromRGB(48, 24, 64) })
+        EG(priorityListRow, 0.14, { BackgroundColor3 = _G.JHC("HOVER") })
         EG(priorityListStroke, 0.14, { Transparency = 0.38 })
     end)
     priorityListRow.MouseLeave:Connect(function()
@@ -4716,7 +4927,7 @@ task.spawn(function()
         frame.Size = UDim2.new(0, 340, 0, 500)
         frame.AnchorPoint = Vector2.new(0.5, 0.5)
         frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-        frame.BackgroundColor3 = Color3.fromRGB(12, 6, 18)
+        frame.BackgroundColor3 = _G.JHC("BG")
         frame.BorderSizePixel = 0
         frame.Parent = gui
         Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
@@ -4875,7 +5086,7 @@ task.spawn(function()
         tG(btn, 6)
         DG(btn, b.AQUA_STROKE, 1, 0.55)
         row.MouseEnter:Connect(function()
-            EG(row, 0.14, { BackgroundColor3 = Color3.fromRGB(48, 24, 64) })
+            EG(row, 0.14, { BackgroundColor3 = _G.JHC("HOVER") })
             EG(rowStroke, 0.14, { Transparency = 0.38 })
         end)
         row.MouseLeave:Connect(function()
@@ -4895,7 +5106,7 @@ task.spawn(function()
     actionRow("Drop Brainrot", "DROP", 210, function()
         if type(_G.StickyDropBrainrot) == "function" then _G.StickyDropBrainrot() end
     end)
-    actionRow("Instant Reset", "RESET", 252, function()
+    actionRow("Instant Reset [E]", "RESET", 252, function()
         if type(_G.StickyInstaReset) == "function" then _G.StickyInstaReset() end
     end)
     do
@@ -4930,6 +5141,525 @@ task.spawn(function()
         _G.StickyOnBoot(function()
             paintCarpet(_G.StickyCarpetSpeed == true)
         end)
+    end
+
+    -- ===== Walk Speed / Steal Speed / Admin Spammer (first tab) =====
+    do
+        local function JH_BuildAdminSpammer(onClose)
+            local Players = game:GetService("Players")
+            local UIS = game:GetService("UserInputService")
+            local LP = Players.LocalPlayer
+            local playerGui = LP:WaitForChild("PlayerGui")
+
+            local C = _G.JHDyn({
+                WIN = "BG", CARD = "SURF", ELEM = "SURF2", TEXT = "TEXT", DIM = "DIM", A1 = "AQUA", A2 = "AQUA_STROKE",
+                WHITE = Color3.fromRGB(255, 255, 255),
+            })
+            local FAMILY = Font.fromEnum(Enum.Font.Gotham).Family
+            local WR, WM, WB = Enum.FontWeight.Regular, Enum.FontWeight.Medium, Enum.FontWeight.Bold
+            local MB1, TOUCH, MOVE = Enum.UserInputType.MouseButton1, Enum.UserInputType.Touch, Enum.UserInputType.MouseMovement
+
+            local function new(class, props, parent)
+                local o = Instance.new(class)
+                if props then for k, v in pairs(props) do o[k] = v end end
+                if parent then o.Parent = parent end
+                return o
+            end
+            local function round(o, r) return new("UICorner", { CornerRadius = UDim.new(0, r) }, o) end
+            local function stroke(o, t)
+                local s = new("UIStroke", { Color = C.WHITE, Thickness = t or 1, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }, o)
+                new("UIGradient", { Color = ColorSequence.new(C.A1, C.A2) }, s)
+                return s
+            end
+            local function tgrad(o)
+                return new("UIGradient", { Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, C.A1), ColorSequenceKeypoint.new(0.5, C.A2), ColorSequenceKeypoint.new(1, C.A1),
+                }) }, o)
+            end
+            local function list(o, gap)
+                return new("UIListLayout", { Padding = UDim.new(0, gap or 0), SortOrder = Enum.SortOrder.LayoutOrder }, o)
+            end
+            local function text(class, parent, str, size, weight, color, xa)
+                local o = new(class, {
+                    BackgroundTransparency = 1, BorderSizePixel = 0, Text = str or "", TextSize = size or 13,
+                    TextColor3 = color or C.TEXT, TextXAlignment = xa or Enum.TextXAlignment.Left,
+                    FontFace = Font.new(FAMILY, weight or WR),
+                }, parent)
+                if class == "TextButton" then o.AutoButtonColor = false end
+                return o
+            end
+
+            -- ===== window =====
+            local gui = new("ScreenGui", {
+                Name = "AdminSpammerUI", ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling, DisplayOrder = 1000,
+            })
+            local startPos = _G.YesIsTouch and UDim2.new(0.5, -160, 0.5, -180) or UDim2.new(0.5, 180, 0.5, -180)
+            local AS = new("Frame", {
+                Size = UDim2.fromOffset(320, 360), Position = startPos, BackgroundColor3 = C.WIN, BorderSizePixel = 0, Active = true,
+            }, gui)
+            round(AS, 16)
+            stroke(AS, 1.4)
+
+            local function drag(handle, target)
+                handle.InputBegan:Connect(function(input)
+                    if input.UserInputType ~= MB1 and input.UserInputType ~= TOUCH then return end
+                    local start, pos = input.Position, target.Position
+                    local mv = UIS.InputChanged:Connect(function(j)
+                        if j.UserInputType == MOVE or j == input then
+                            local d = j.Position - start
+                            target.Position = UDim2.new(pos.X.Scale, pos.X.Offset + d.X, pos.Y.Scale, pos.Y.Offset + d.Y)
+                        end
+                    end)
+                    local ec
+                    ec = input.Changed:Connect(function()
+                        if input.UserInputState == Enum.UserInputState.End then
+                            mv:Disconnect()
+                            ec:Disconnect()
+                        end
+                    end)
+                end)
+            end
+
+            local function resizer(f, minW, minH)
+                local b = new("TextButton", {
+                    AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -3, 1, -3), Size = UDim2.fromOffset(16, 16),
+                    BackgroundTransparency = 1, Text = "", AutoButtonColor = false, ZIndex = 6,
+                }, f)
+                for _, s in ipairs({ { 12, 2 }, { 2, 12 } }) do
+                    round(new("Frame", {
+                        AnchorPoint = Vector2.new(1, 1), Position = UDim2.fromScale(1, 1), Size = UDim2.fromOffset(s[1], s[2]),
+                        BackgroundColor3 = C.DIM, BorderSizePixel = 0,
+                    }, b), 1)
+                end
+                b.InputBegan:Connect(function(input)
+                    if input.UserInputType ~= MB1 and input.UserInputType ~= TOUCH then return end
+                    local start, size = input.Position, f.AbsoluteSize
+                    local mv = UIS.InputChanged:Connect(function(j)
+                        if j.UserInputType == MOVE or j == input then
+                            local d = j.Position - start
+                            f.Size = UDim2.fromOffset(math.max(minW, size.X + d.X), math.max(minH, size.Y + d.Y))
+                        end
+                    end)
+                    local ec
+                    ec = input.Changed:Connect(function()
+                        if input.UserInputState == Enum.UserInputState.End then
+                            mv:Disconnect()
+                            ec:Disconnect()
+                        end
+                    end)
+                end)
+            end
+
+            local hd = new("Frame", { Size = UDim2.new(1, 0, 0, 36), BackgroundTransparency = 1 }, AS)
+            local title = text("TextLabel", hd, "Admin Spammer", 13, WB, C.WHITE)
+            title.Position = UDim2.fromOffset(11, 0)
+            title.Size = UDim2.new(1, -40, 1, 0)
+            tgrad(title)
+            local closeBtn = text("TextButton", hd, "X", 12, WB, C.DIM, Enum.TextXAlignment.Center)
+            closeBtn.Position = UDim2.new(1, -34, 0, 6)
+            closeBtn.Size = UDim2.fromOffset(24, 24)
+            closeBtn.MouseButton1Click:Connect(function()
+                gui.Enabled = false
+                if onClose then pcall(onClose) end
+            end)
+            drag(hd, AS)
+            resizer(AS, 260, 200)
+
+            local body = new("ScrollingFrame", {
+                Position = UDim2.fromOffset(0, 36), Size = UDim2.new(1, 0, 1, -36), BackgroundTransparency = 1, BorderSizePixel = 0,
+                ScrollBarThickness = 3, ScrollBarImageColor3 = C.A1, CanvasSize = UDim2.new(),
+                AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollingDirection = Enum.ScrollingDirection.Y,
+            }, AS)
+            new("UIPadding", {
+                PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10),
+            }, body)
+            list(body, 6)
+
+            -- ===== admin panel command logic =====
+            local CMDS = { "ragdoll", "jumpscare", "morph", "jail", "tiny", "nightvision", "control", "balloon", "inverse", "rocket" }
+
+            local function adminGuiObjs()
+                local g = playerGui:FindFirstChild("AdminPanel")
+                return g, g and g:FindFirstChild("AdminPanel")
+            end
+            local function cmdButton(cmd)
+                local _, panel = adminGuiObjs()
+                if not panel then return nil end
+                for _, b in ipairs(panel:GetDescendants()) do
+                    if b:IsA("GuiButton") and b.Name ~= "Template" then
+                        local c = b:FindFirstChild("Command")
+                        if c and c:IsA("TextLabel") and c.Text:lower():gsub("^;", "") == cmd then return b end
+                    end
+                end
+            end
+            local function cmdCooldown(cmd)
+                local b = cmdButton(cmd)
+                local t = b and b:FindFirstChild("Timer")
+                if t and t:IsA("TextLabel") and t.Visible then
+                    local n = tonumber(t.Text:match("(%d+)"))
+                    if n and n > 0 then return n end
+                end
+                return 0
+            end
+            local function press(b)
+                if type(firesignal) == "function" then
+                    pcall(firesignal, b.Activated)
+                    pcall(firesignal, b.MouseButton1Click)
+                elseif type(getconnections) == "function" then
+                    pcall(function()
+                        for _, cn in ipairs(getconnections(b.MouseButton1Click)) do cn:Fire() end
+                        for _, cn in ipairs(getconnections(b.Activated)) do cn:Fire() end
+                    end)
+                end
+            end
+            local function adminCmd(cmd, target)
+                local g, panel = adminGuiObjs()
+                if not panel or not target then return false end
+                local b = cmdButton(cmd)
+                if not b or cmdCooldown(cmd) > 0 then return false end
+                local was = panel.Visible
+                panel.Visible = true
+                press(b)
+                task.wait(0.15)
+                local picked = false
+                for _, x in ipairs(g:GetDescendants()) do
+                    if x:IsA("GuiButton") and x.Visible and x ~= b then
+                        local hit = x.Name == target.Name or x.Name == tostring(target.UserId)
+                        if not hit then
+                            for _, t in ipairs(x:GetDescendants()) do
+                                if t:IsA("TextLabel") and (t.Text == target.Name or t.Text == target.DisplayName or t.Text == "@" .. target.Name) then
+                                    hit = true
+                                    break
+                                end
+                            end
+                        end
+                        if hit then
+                            press(x)
+                            picked = true
+                            break
+                        end
+                    end
+                end
+                panel.Visible = was
+                return picked
+            end
+            local function spamCmds(cmdList, target)
+                local snapshot = table.clone(cmdList or {})
+                task.spawn(function()
+                    for _, c in ipairs(snapshot) do
+                        if not target or not target.Parent then return end
+                        adminCmd(c, target)
+                        task.wait(0.35)
+                    end
+                end)
+            end
+
+            -- ===== command sets (1 / 2), saved in the hub config =====
+            local function sets()
+                if type(_G.StickyAdminSpam1) ~= "table" then _G.StickyAdminSpam1 = { "balloon", "tiny", "inverse", "rocket" } end
+                if type(_G.StickyAdminSpam2) ~= "table" then _G.StickyAdminSpam2 = { "ragdoll", "jail", "jumpscare", "morph" } end
+                return _G.StickyAdminSpam1, _G.StickyAdminSpam2
+            end
+            local function which(cmd)
+                local s1, s2 = sets()
+                if table.find(s1, cmd) then return 1 end
+                if table.find(s2, cmd) then return 2 end
+                return 0
+            end
+            local function assign(cmd, n)
+                local s1, s2 = sets()
+                local i1, i2 = table.find(s1, cmd), table.find(s2, cmd)
+                if i1 then table.remove(s1, i1) end
+                i2 = table.find(s2, cmd)
+                if i2 then table.remove(s2, i2) end
+                if n == 1 then s1[#s1 + 1] = cmd elseif n == 2 then s2[#s2 + 1] = cmd end
+                if _G.StickySaveConfigNow then task.spawn(_G.StickySaveConfigNow) end
+            end
+
+            local cfgBtn = text("TextButton", body, "Configure Commands  v", 11, WB, C.DIM, Enum.TextXAlignment.Center)
+            cfgBtn.Size = UDim2.new(1, 0, 0, 28)
+            cfgBtn.BackgroundTransparency = 0
+            cfgBtn.BackgroundColor3 = C.ELEM
+            cfgBtn.LayoutOrder = 1
+            round(cfgBtn, 8)
+            stroke(cfgBtn, 1)
+            local cfgList = new("Frame", {
+                Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Visible = false, LayoutOrder = 2,
+            }, body)
+            list(cfgList, 3)
+            for idx, cmd in ipairs(CMDS) do
+                local r = new("Frame", { Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, LayoutOrder = idx }, cfgList)
+                local l = text("TextLabel", r, cmd, 12, WM, C.TEXT)
+                l.Position = UDim2.fromOffset(8, 0)
+                l.Size = UDim2.new(1, -64, 1, 0)
+                local bs = {}
+                local function paint()
+                    local w = which(cmd)
+                    for n, b in pairs(bs) do b.BackgroundColor3 = (w == n) and C.A1 or C.ELEM end
+                end
+                for n, xo in ipairs({ -30, -2 }) do
+                    local b = text("TextButton", r, tostring(n), 12, WB, C.TEXT, Enum.TextXAlignment.Center)
+                    b.AnchorPoint = Vector2.new(1, 0.5)
+                    b.Position = UDim2.new(1, xo, 0.5, 0)
+                    b.Size = UDim2.fromOffset(24, 20)
+                    b.BackgroundTransparency = 0
+                    round(b, 4)
+                    bs[n] = b
+                    b.MouseButton1Click:Connect(function()
+                        assign(cmd, which(cmd) == n and 0 or n)
+                        paint()
+                    end)
+                end
+                paint()
+            end
+            cfgBtn.MouseButton1Click:Connect(function()
+                cfgList.Visible = not cfgList.Visible
+                cfgBtn.Text = cfgList.Visible and "Configure Commands  ^" or "Configure Commands  v"
+            end)
+            new("Frame", { Size = UDim2.new(1, 0, 0, 1), BackgroundColor3 = C.ELEM, BorderSizePixel = 0, LayoutOrder = 3 }, body)
+            local plist = new("Frame", {
+                Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, LayoutOrder = 4,
+            }, body)
+            list(plist, 4)
+
+            -- ===== player cards (click = spam set 1, next click = set 2, alternating) =====
+            local joinN, joinOf, rows, nextSpam = 0, {}, {}, 1
+            for _, p in ipairs(Players:GetPlayers()) do
+                joinN = joinN + 1
+                joinOf[p] = joinN
+            end
+            local function addRow(p)
+                if p == LP or rows[p] then return end
+                if not joinOf[p] then
+                    joinN = joinN + 1
+                    joinOf[p] = joinN
+                end
+                local b = new("TextButton", {
+                    Size = UDim2.new(1, 0, 0, 58), BackgroundColor3 = C.CARD, BorderSizePixel = 0, AutoButtonColor = false,
+                    Text = "", LayoutOrder = joinOf[p],
+                }, plist)
+                round(b, 8)
+                stroke(b, 1)
+                local av = new("ImageLabel", {
+                    Size = UDim2.fromOffset(34, 34), Position = UDim2.new(0, 8, 0.5, -17), BackgroundTransparency = 1,
+                    ScaleType = Enum.ScaleType.Fit,
+                }, b)
+                round(av, 17)
+                task.spawn(function()
+                    local ok, img = pcall(Players.GetUserThumbnailAsync, Players, p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
+                    if ok and av.Parent then av.Image = img end
+                end)
+                local dot = new("Frame", {
+                    Size = UDim2.fromOffset(9, 9), Position = UDim2.new(0, 31, 0.5, 6), BackgroundColor3 = Color3.fromRGB(110, 110, 118),
+                    BorderSizePixel = 0, ZIndex = 3,
+                }, b)
+                round(dot, 5)
+                local n = text("TextLabel", b, p.DisplayName, 14, WB, C.TEXT)
+                n.Position = UDim2.fromOffset(46, 3)
+                n.Size = UDim2.new(1, -54, 0, 15)
+                n.TextTruncate = Enum.TextTruncate.AtEnd
+                local u = text("TextLabel", b, "@" .. p.Name, 11, WR, C.DIM)
+                u.Position = UDim2.fromOffset(46, 16)
+                u.Size = UDim2.new(1, -54, 0, 11)
+                u.TextTruncate = Enum.TextTruncate.AtEnd
+                local badge = text("TextLabel", b, "", 10, WB, C.A2)
+                badge.Position = UDim2.fromOffset(46, 27)
+                badge.Size = UDim2.new(1, -54, 0, 11)
+                local jo = text("TextLabel", b, "Joined #" .. joinOf[p], 11, WM, C.TEXT)
+                jo.Name = "PlayerJoinOrder"
+                jo.Position = UDim2.fromOffset(46, 39)
+                jo.Size = UDim2.new(1, -54, 0, 13)
+                b.MouseEnter:Connect(function() b.BackgroundColor3 = C.ELEM end)
+                b.MouseLeave:Connect(function() b.BackgroundColor3 = C.CARD end)
+                b.MouseButton1Click:Connect(function()
+                    local s1, s2 = sets()
+                    if nextSpam == 1 then
+                        spamCmds(s1, p)
+                        nextSpam = 2
+                    else
+                        spamCmds(s2, p)
+                        nextSpam = 1
+                    end
+                end)
+                rows[p] = { row = b, dot = dot, badge = badge }
+            end
+            for _, p in ipairs(Players:GetPlayers()) do addRow(p) end
+            Players.PlayerAdded:Connect(addRow)
+            Players.PlayerRemoving:Connect(function(p)
+                if rows[p] then
+                    rows[p].row:Destroy()
+                    rows[p] = nil
+                end
+                joinOf[p] = nil
+            end)
+
+            -- status dot (green = moving) + "IN YOUR BASE" / "STEALING FROM YOU" badge
+            local function findMyBase()
+                local plots = workspace:FindFirstChild("Plots")
+                if not plots then return nil end
+                for _, base in ipairs(plots:GetChildren()) do
+                    local sign = base:FindFirstChild("PlotSign")
+                    local yb = sign and sign:FindFirstChild("YourBase")
+                    if yb and yb.Enabled then return base end
+                end
+                return nil
+            end
+            task.spawn(function()
+                while gui.Parent do
+                    if gui.Enabled then
+                        pcall(function()
+                            local my = findMyBase()
+                            local centre = my and my:GetPivot().Position
+                            for p, r in pairs(rows) do
+                                local root_ = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+                                local moving = root_ and Vector3.new(root_.AssemblyLinearVelocity.X, 0, root_.AssemblyLinearVelocity.Z).Magnitude > 1
+                                r.dot.BackgroundColor3 = moving and Color3.fromRGB(80, 225, 120) or Color3.fromRGB(110, 110, 118)
+                                local inBase = centre and root_ and (root_.Position - centre).Magnitude < 70
+                                r.badge.Text = (p:GetAttribute("Stealing") and inBase) and "STEALING FROM YOU" or (inBase and "IN YOUR BASE" or "")
+                            end
+                        end)
+                    end
+                    task.wait(0.5)
+                end
+            end)
+
+            local okParent = pcall(function()
+                gui.Parent = (gethui and gethui()) or playerGui
+            end)
+            if not okParent or not gui.Parent then gui.Parent = playerGui end
+            return gui
+        end
+
+        local adminGui = nil
+        local adminRow = nil
+        local function paintRow(r, on)
+            if on then
+                r.button.BackgroundColor3 = b.GREEN1
+                r.knob.BackgroundTransparency = 0
+                r.stateLabel.Text = "ON"
+                r.stateLabel.TextColor3 = Color3.fromRGB(220, 255, 200)
+                r.stroke.Color = b.GREEN_STROKE
+                r.stroke.Transparency = 0.22
+            else
+                r.button.BackgroundColor3 = b.OFF_BG
+                r.knob.BackgroundTransparency = 1
+                r.stateLabel.Text = "OFF"
+                r.stateLabel.TextColor3 = b.OFF_TEXT
+                r.stroke.Color = b.AQUA_STROKE
+                r.stroke.Transparency = 0.55
+            end
+            if r.rowStroke then
+                r.rowStroke.Transparency = on and 0.38 or 0.52
+            end
+        end
+
+        local function setAdminSpammer(on)
+            if on then
+                if not (adminGui and adminGui.Parent) then
+                    local ok, res = pcall(JH_BuildAdminSpammer, function() if adminRow then paintRow(adminRow, false) end end)
+                    if ok and res then
+                        adminGui = res
+                    else
+                        warn("[JHAYDEE] Admin Spammer failed to load: " .. tostring(res))
+                        return false
+                    end
+                end
+                adminGui.Enabled = true
+                return true
+            end
+            if adminGui then adminGui.Enabled = false end
+            return false
+        end
+
+        local function toggleRow(label, y, getOn, setOn)
+            local r = HG(lG, label, y)
+            paintRow(r, getOn())
+            r.button.MouseButton1Click:Connect(function()
+                local want = not getOn()
+                local result = setOn(want)
+                if result ~= nil then want = result end
+                paintRow(r, want)
+                if _G.StickySaveConfigNow then task.spawn(_G.StickySaveConfigNow) end
+            end)
+            _G.StickyOnBoot(function()
+                paintRow(r, getOn())
+            end)
+            return r
+        end
+
+        local function valueRow(labelText, order, getVal, setVal)
+            local row = Instance.new("Frame", lG)
+            row.Name = labelText:gsub("%s+", "") .. "Row"
+            row.Size = UDim2.new(1, 0, 0, math.floor(38 * AG))
+            row.BackgroundColor3 = b.SURF2
+            row.BackgroundTransparency = 0.02
+            row.BorderSizePixel = 0
+            row.LayoutOrder = math.floor((order * AG) / math.max(1, 42 * AG)) + 1
+            row.ZIndex = 103
+            tG(row, 10)
+            local rowStroke = DG(row, b.AQUA_STROKE, 1, 0.52)
+            local lbl = Instance.new("TextLabel", row)
+            lbl.BackgroundTransparency = 1
+            lbl.Position = UDim2.fromOffset(10, 0)
+            lbl.Size = UDim2.new(1, -90.0, 1, 0)
+            lbl.Font = Enum.Font.GothamBold
+            lbl.Text = labelText
+            lbl.TextColor3 = b.TEXT
+            lbl.TextSize = 13 * AG
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.ZIndex = 104
+            local box = Instance.new("TextBox", row)
+            box.Name = labelText:gsub("%s+", "") .. "Input"
+            box.Size = UDim2.fromOffset(math.floor(72 * AG), math.floor(26 * AG))
+            box.Position = UDim2.new(1, -math.floor(80 * AG), 0.5, -math.floor(13 * AG))
+            box.BackgroundColor3 = b.AQUA2
+            box.BorderSizePixel = 0
+            box.ClearTextOnFocus = false
+            box.Text = tostring(getVal())
+            box.TextColor3 = b.TEXT
+            box.TextSize = 11 * AG
+            box.Font = Enum.Font.GothamBold
+            box.ZIndex = 104
+            tG(box, 6)
+            DG(box, b.AQUA_STROKE, 1, 0.55)
+            row.MouseEnter:Connect(function()
+                EG(row, 0.14, { BackgroundColor3 = _G.JHC("HOVER") })
+                EG(rowStroke, 0.14, { Transparency = 0.38 })
+            end)
+            row.MouseLeave:Connect(function()
+                EG(row, 0.14, { BackgroundColor3 = b.SURF2 })
+                EG(rowStroke, 0.14, { Transparency = 0.52 })
+            end)
+            box.FocusLost:Connect(function()
+                local n = tonumber(box.Text)
+                if n then setVal(n) end
+                box.Text = tostring(getVal())
+                if _G.StickySaveConfigNow then task.spawn(_G.StickySaveConfigNow) end
+            end)
+            return row, box
+        end
+
+        toggleRow("Walk Speed", 336 * AG,
+            function() return _G.StickyWalkSpeed == true end,
+            function(on) _G.StickyWalkSpeed = on and true or false end)
+        valueRow("Walk Value (16-32)", 378 * AG,
+            function() return math.clamp(tonumber(_G.StickyWalkSpeedValue) or 28, 16, 32) end,
+            function(n) _G.StickyWalkSpeedValue = math.clamp(math.floor(n + 0.5), 16, 32) end)
+        toggleRow("Steal Speed", 420 * AG,
+            function() return _G.StickyStealSpeed == true end,
+            function(on) _G.StickyStealSpeed = on and true or false end)
+        valueRow("Steal Value (15-32)", 462 * AG,
+            function() return math.clamp(tonumber(_G.StickyStealSpeedValue) or 22, 15, 32) end,
+            function(n) _G.StickyStealSpeedValue = math.clamp(math.floor(n + 0.5), 15, 32) end)
+        adminRow = toggleRow("Admin Spammer", 504 * AG,
+            function() return adminGui ~= nil and adminGui.Parent ~= nil and adminGui.Enabled end,
+            function(on) return setAdminSpammer(on) end)
+        -- F key opens/closes the Admin Spammer
+        _G.JH_ToggleAdminSpammer = function()
+            local want = not (adminGui ~= nil and adminGui.Parent ~= nil and adminGui.Enabled)
+            local shown = setAdminSpammer(want)
+            if adminRow then paintRow(adminRow, shown == true) end
+        end
     end
     do
         local outerPanel = P.TargetControlsFrame
@@ -5020,31 +5750,9 @@ task.spawn(function()
             local palette = THEME_PALETTES[name]
             if not palette then return end
             loadThemePalette(name)
+            pcall(_G.JHRecolorAll, old, b)
             local root = P.TargetControlsFrame
-            if root then
-                -- Include the control panel and its contents, including this selector.
-                for _, obj in ipairs(root:GetDescendants()) do
-                    if obj:IsA("GuiObject") then
-                        if obj.BackgroundColor3 == old.BG then obj.BackgroundColor3 = b.BG end
-                        if obj.BackgroundColor3 == old.SURF then obj.BackgroundColor3 = b.SURF end
-                        if obj.BackgroundColor3 == old.SURF2 then obj.BackgroundColor3 = b.SURF2 end
-                        if obj.BackgroundColor3 == old.AQUA then obj.BackgroundColor3 = b.AQUA end
-                        if obj.BackgroundColor3 == old.AQUA2 then obj.BackgroundColor3 = b.AQUA2 end
-                        if obj.BackgroundColor3 == old.GREEN1 then obj.BackgroundColor3 = b.GREEN1 end
-                        if obj.BackgroundColor3 == old.GREEN2 then obj.BackgroundColor3 = b.GREEN2 end
-                        if obj.BackgroundColor3 == old.OFF_BG then obj.BackgroundColor3 = b.OFF_BG end
-                        if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
-                            if obj.TextColor3 == old.TEXT then obj.TextColor3 = b.TEXT end
-                            if obj.TextColor3 == old.DIM then obj.TextColor3 = b.DIM end
-                            if obj.TextColor3 == old.OFF_TEXT then obj.TextColor3 = b.OFF_TEXT end
-                        end
-                    elseif obj:IsA("UIStroke") then
-                        if obj.Color == old.AQUA_STROKE then obj.Color = b.AQUA_STROKE end
-                        if obj.Color == old.GREEN_STROKE then obj.Color = b.GREEN_STROKE end
-                    end
-                end
-                root.BackgroundColor3 = b.BG
-            end
+            if root then root.BackgroundColor3 = b.BG end
             for themeName, button in pairs(themeButtons) do
                 button.BackgroundColor3 = (themeName == name) and b.GREEN1 or b.OFF_BG
                 button.TextColor3 = (themeName == name) and b.TEXT or b.OFF_TEXT
@@ -6507,22 +7215,22 @@ do
     btn.AnchorPoint = Vector2.new(1, 0)
     btn.Position = UDim2.new(1, -14, 0, 72)
     btn.Size = UDim2.fromOffset(56, 56)
-    btn.BackgroundColor3 = Color3.fromRGB(18, 10, 28)
+    btn.BackgroundColor3 = _G.JHC("SURF")
     btn.BorderSizePixel = 0
     btn.AutoButtonColor = false
     btn.Text = "JHAYDEE"
     btn.Font = Enum.Font.GothamBlack
     btn.TextSize = 13
-    btn.TextColor3 = Color3.fromRGB(255, 160, 40)
+    btn.TextColor3 = _G.JHC("LIGHT")
     btn.ZIndex = 200
     btn.Parent = gui
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 14)
     local stroke = Instance.new("UIStroke", btn)
-    stroke.Color = Color3.fromRGB(255, 140, 40)
+    stroke.Color = _G.JHC("AQUA_STROKE")
     stroke.Thickness = 1.6
     stroke.Transparency = 0.15
     local glow = Instance.new("UIStroke", btn)
-    glow.Color = Color3.fromRGB(255, 100, 0)
+    glow.Color = _G.JHC("AQUA")
     glow.Thickness = 4
     glow.Transparency = 0.78
     glow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -6535,7 +7243,7 @@ do
     sub.BackgroundTransparency = 1
     sub.Font = Enum.Font.GothamBold
     sub.TextSize = 9
-    sub.TextColor3 = Color3.fromRGB(180, 140, 100)
+    sub.TextColor3 = _G.JHC("DIM")
     sub.Text = "OPEN"
     sub.ZIndex = 201
 
@@ -6562,16 +7270,16 @@ do
         end
         -- also hide parent ScreenGuis content if needed (frames themselves)
         if panelsOpen then
-            btn.BackgroundColor3 = Color3.fromRGB(18, 10, 28)
-            btn.TextColor3 = Color3.fromRGB(255, 160, 40)
-            stroke.Color = Color3.fromRGB(255, 140, 40)
+            btn.BackgroundColor3 = _G.JHC("SURF")
+            btn.TextColor3 = _G.JHC("LIGHT")
+            stroke.Color = _G.JHC("AQUA_STROKE")
             stroke.Transparency = 0.15
             sub.Text = "OPEN"
             sub.TextColor3 = Color3.fromRGB(120, 255, 80)
         else
-            btn.BackgroundColor3 = Color3.fromRGB(28, 14, 18)
-            btn.TextColor3 = Color3.fromRGB(180, 100, 60)
-            stroke.Color = Color3.fromRGB(120, 60, 40)
+            btn.BackgroundColor3 = _G.JHC("OFF_BG")
+            btn.TextColor3 = _G.JHC("OFF_TEXT")
+            stroke.Color = _G.JHC("DIM")
             stroke.Transparency = 0.4
             sub.Text = "CLOSE"
             sub.TextColor3 = Color3.fromRGB(200, 80, 60)
@@ -6587,16 +7295,16 @@ do
     -- hover feedback
     btn.MouseEnter:Connect(function()
         if panelsOpen then
-            btn.BackgroundColor3 = Color3.fromRGB(36, 18, 48)
+            btn.BackgroundColor3 = _G.JHC("SURF2")
         else
-            btn.BackgroundColor3 = Color3.fromRGB(42, 18, 28)
+            btn.BackgroundColor3 = _G.JHC("HOVER")
         end
     end)
     btn.MouseLeave:Connect(function()
         if panelsOpen then
-            btn.BackgroundColor3 = Color3.fromRGB(18, 10, 28)
+            btn.BackgroundColor3 = _G.JHC("SURF")
         else
-            btn.BackgroundColor3 = Color3.fromRGB(28, 14, 18)
+            btn.BackgroundColor3 = _G.JHC("OFF_BG")
         end
     end)
 
@@ -6619,7 +7327,7 @@ do
         panel.Name = "APPanel"
         panel.Size = UDim2.fromOffset(300, 250)
         panel.Position = UDim2.new(0.5, -150, 0.28, 0)
-        panel.BackgroundColor3 = Color3.fromRGB(20, 12, 28)
+        panel.BackgroundColor3 = _G.JHC("BG")
         panel.BorderSizePixel = 0
         panel.Active = true
         panel.Draggable = true
@@ -6627,12 +7335,12 @@ do
         panel.Parent = apGui
         Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 12)
         local outline = Instance.new("UIStroke", panel)
-        outline.Color = Color3.fromRGB(255, 90, 170)
+        outline.Color = _G.JHC("AQUA_STROKE")
         outline.Thickness = 1.5
 
         local header = Instance.new("Frame")
         header.Size = UDim2.new(1, 0, 0, 38)
-        header.BackgroundColor3 = Color3.fromRGB(36, 16, 42)
+        header.BackgroundColor3 = _G.JHC("SURF2")
         header.BorderSizePixel = 0
         header.Parent = panel
         Instance.new("UICorner", header).CornerRadius = UDim.new(0, 12)
@@ -6642,7 +7350,7 @@ do
         title.Position = UDim2.fromOffset(12, 0)
         title.BackgroundTransparency = 1
         title.Text = "JHAYDEE HUB • AP PANEL"
-        title.TextColor3 = Color3.fromRGB(255, 220, 245)
+        title.TextColor3 = _G.JHC("TEXT")
         title.Font = Enum.Font.GothamBold
         title.TextSize = 13
         title.TextXAlignment = Enum.TextXAlignment.Left
@@ -6651,7 +7359,7 @@ do
         local close = Instance.new("TextButton")
         close.Size = UDim2.fromOffset(26, 26)
         close.Position = UDim2.new(1, -32, 0, 6)
-        close.BackgroundColor3 = Color3.fromRGB(75, 30, 65)
+        close.BackgroundColor3 = _G.JHC("AQUA2")
         close.Text = "×"
         close.TextColor3 = Color3.new(1, 1, 1)
         close.Font = Enum.Font.GothamBold
@@ -6665,8 +7373,8 @@ do
         note.Size = UDim2.new(1, -24, 0, 62)
         note.Position = UDim2.fromOffset(12, 48)
         note.BackgroundTransparency = 1
-        note.Text = "Press F to open/close this panel. The original spam-command actions are not included; this UI cannot grant admin permissions."
-        note.TextColor3 = Color3.fromRGB(220, 200, 220)
+        note.Text = "The original spam-command actions are not included; this UI cannot grant admin permissions."
+        note.TextColor3 = _G.JHC("DIM")
         note.Font = Enum.Font.Gotham
         note.TextSize = 12
         note.TextWrapped = true
@@ -6678,8 +7386,8 @@ do
         playerCount.Name = "PlayerCount"
         playerCount.Size = UDim2.new(1, -24, 0, 30)
         playerCount.Position = UDim2.fromOffset(12, 116)
-        playerCount.BackgroundColor3 = Color3.fromRGB(35, 24, 42)
-        playerCount.TextColor3 = Color3.fromRGB(255, 220, 245)
+        playerCount.BackgroundColor3 = _G.JHC("SURF")
+        playerCount.TextColor3 = _G.JHC("TEXT")
         playerCount.Font = Enum.Font.GothamSemibold
         playerCount.TextSize = 12
         playerCount.BorderSizePixel = 0
@@ -6689,7 +7397,7 @@ do
         local refresh = Instance.new("TextButton")
         refresh.Size = UDim2.new(1, -24, 0, 34)
         refresh.Position = UDim2.fromOffset(12, 156)
-        refresh.BackgroundColor3 = Color3.fromRGB(130, 45, 100)
+        refresh.BackgroundColor3 = _G.JHC("AQUA2")
         refresh.Text = "REFRESH PLAYER COUNT"
         refresh.TextColor3 = Color3.new(1, 1, 1)
         refresh.Font = Enum.Font.GothamBold
@@ -6708,7 +7416,7 @@ do
         _G.JHAYDEE_APPanel = panel
     end
 
-    -- Hotkeys: F toggles the AP panel; R instantly leaves this server.
+    -- Hotkeys: F toggles the Admin Spammer; E = Instant Reset; R instantly leaves this server.
     local UIS = game:GetService("UserInputService")
     local Players = game:GetService("Players")
     local localPlayer = Players.LocalPlayer
@@ -6717,11 +7425,10 @@ do
         if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
 
         if input.KeyCode == Enum.KeyCode.F then
-            if _G.JHAYDEE_APPanel then
-                _G.JHAYDEE_APPanel.Visible = not _G.JHAYDEE_APPanel.Visible
-            else
-                _G.JHAYDEE_APPanelOpen = not (_G.JHAYDEE_APPanelOpen == true)
-            end
+            if _G.JH_ToggleAdminSpammer then pcall(_G.JH_ToggleAdminSpammer) end
+            return
+        elseif input.KeyCode == Enum.KeyCode.E then
+            if type(_G.StickyInstaReset) == "function" then pcall(_G.StickyInstaReset) end
             return
         elseif input.KeyCode == Enum.KeyCode.R then
             -- Kick only the local player out of the current session.
@@ -6775,21 +7482,21 @@ do
     frame.AnchorPoint = Vector2.new(0.5, 1)
     frame.Position = UDim2.new(0.5, 0, 1, -120)
     frame.Size = UDim2.fromOffset(340, 118)
-    frame.BackgroundColor3 = Color3.fromRGB(14, 8, 22)
+    frame.BackgroundColor3 = _G.JHC("BG")
     frame.BackgroundTransparency = 0.02
     frame.BorderSizePixel = 0
     frame.ZIndex = 180
     frame.Parent = gui
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
     local stroke = Instance.new("UIStroke", frame)
-    stroke.Color = Color3.fromRGB(255, 140, 40)
+    stroke.Color = _G.JHC("AQUA_STROKE")
     stroke.Thickness = 1.4
     stroke.Transparency = 0.25
 
     -- title bar
     local titleBar = Instance.new("Frame", frame)
     titleBar.Size = UDim2.new(1, 0, 0, 28)
-    titleBar.BackgroundColor3 = Color3.fromRGB(22, 12, 32)
+    titleBar.BackgroundColor3 = _G.JHC("BG2")
     titleBar.BorderSizePixel = 0
     titleBar.ZIndex = 181
     Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 12)
@@ -6797,7 +7504,7 @@ do
     local titleCover = Instance.new("Frame", titleBar)
     titleCover.Size = UDim2.new(1, 0, 0, 10)
     titleCover.Position = UDim2.new(0, 0, 1, -10)
-    titleCover.BackgroundColor3 = Color3.fromRGB(22, 12, 32)
+    titleCover.BackgroundColor3 = _G.JHC("BG2")
     titleCover.BorderSizePixel = 0
     titleCover.ZIndex = 181
 
@@ -6821,7 +7528,7 @@ do
     title.BackgroundTransparency = 1
     title.Font = Enum.Font.GothamBold
     title.TextSize = 13
-    title.TextColor3 = Color3.fromRGB(255, 245, 220)
+    title.TextColor3 = _G.JHC("TEXT")
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.Text = "JH/HZ JOB ID COPIER"
     title.ZIndex = 182
@@ -6829,11 +7536,11 @@ do
     local closeBtn = Instance.new("TextButton", titleBar)
     closeBtn.Size = UDim2.fromOffset(22, 22)
     closeBtn.Position = UDim2.new(1, -26, 0.5, -11)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(36, 18, 48)
+    closeBtn.BackgroundColor3 = _G.JHC("SURF2")
     closeBtn.Text = "–"
     closeBtn.Font = Enum.Font.GothamBold
     closeBtn.TextSize = 16
-    closeBtn.TextColor3 = Color3.fromRGB(255, 160, 40)
+    closeBtn.TextColor3 = _G.JHC("LIGHT")
     closeBtn.AutoButtonColor = false
     closeBtn.ZIndex = 183
     Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
@@ -6855,11 +7562,11 @@ do
     local idBox = Instance.new("TextBox", frame)
     idBox.Size = UDim2.new(1, -20, 0, 32)
     idBox.Position = UDim2.fromOffset(10, 38)
-    idBox.BackgroundColor3 = Color3.fromRGB(28, 14, 42)
+    idBox.BackgroundColor3 = _G.JHC("SURF")
     idBox.BorderSizePixel = 0
     idBox.Font = Enum.Font.GothamMedium
     idBox.TextSize = 12
-    idBox.TextColor3 = Color3.fromRGB(255, 220, 180)
+    idBox.TextColor3 = _G.JHC("TEXT")
     idBox.TextXAlignment = Enum.TextXAlignment.Center
     idBox.ClearTextOnFocus = false
     idBox.TextEditable = false
@@ -6867,7 +7574,7 @@ do
     idBox.Text = tostring(game.JobId or "")
     Instance.new("UICorner", idBox).CornerRadius = UDim.new(0, 8)
     local idStroke = Instance.new("UIStroke", idBox)
-    idStroke.Color = Color3.fromRGB(140, 60, 180)
+    idStroke.Color = _G.JHC("AQUA_STROKE")
     idStroke.Thickness = 1
     idStroke.Transparency = 0.35
 
@@ -6875,17 +7582,17 @@ do
     local copyBtn = Instance.new("TextButton", frame)
     copyBtn.Size = UDim2.new(1, -20, 0, 34)
     copyBtn.Position = UDim2.fromOffset(10, 76)
-    copyBtn.BackgroundColor3 = Color3.fromRGB(36, 16, 52)
+    copyBtn.BackgroundColor3 = _G.JHC("SURF2")
     copyBtn.BorderSizePixel = 0
     copyBtn.AutoButtonColor = false
     copyBtn.Font = Enum.Font.GothamBlack
     copyBtn.TextSize = 13
-    copyBtn.TextColor3 = Color3.fromRGB(255, 160, 40)
+    copyBtn.TextColor3 = _G.JHC("LIGHT")
     copyBtn.Text = "COPY JOB ID"
     copyBtn.ZIndex = 181
     Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 8)
     local copyStroke = Instance.new("UIStroke", copyBtn)
-    copyStroke.Color = Color3.fromRGB(255, 140, 40)
+    copyStroke.Color = _G.JHC("AQUA_STROKE")
     copyStroke.Thickness = 1.2
     copyStroke.Transparency = 0.3
 
@@ -6932,18 +7639,18 @@ do
         task.delay(1.5, function()
             if copyBtn and copyBtn.Parent then
                 copyBtn.Text = "COPY JOB ID"
-                copyBtn.TextColor3 = Color3.fromRGB(255, 160, 40)
-                copyStroke.Color = Color3.fromRGB(255, 140, 40)
+                copyBtn.TextColor3 = _G.JHC("LIGHT")
+                copyStroke.Color = _G.JHC("AQUA_STROKE")
             end
         end)
     end
 
     copyBtn.MouseButton1Click:Connect(copyJobId)
     copyBtn.MouseEnter:Connect(function()
-        copyBtn.BackgroundColor3 = Color3.fromRGB(48, 22, 68)
+        copyBtn.BackgroundColor3 = _G.JHC("HOVER")
     end)
     copyBtn.MouseLeave:Connect(function()
-        copyBtn.BackgroundColor3 = Color3.fromRGB(36, 16, 52)
+        copyBtn.BackgroundColor3 = _G.JHC("SURF2")
     end)
 
     -- keep job id updated (in case of rare teleport mid-session)
